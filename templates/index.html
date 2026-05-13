@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restoran Pemesanan</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        h1, h2 { color: #333; }
+        button { padding: 10px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #218838; }
+    </style>
+</head>
+<body>
+    <h1>Menu Restoran</h1>
+    <form method="POST" action="/pesan">
+        {% for kategori, items in menu.items() %}
+            <h2>{{ kategori }}</h2>
+            {% for item, harga in items.items() %}
+                <div>
+                    <label>
+                        <input type="checkbox" name="item" value="{{ item }}"> {{ item }}: Rp {{ harga }}
+                    </label>
+                </div>
+            {% endfor %}
+        {% endfor %}
+        <button type="submit">Pesan</button>
+    </form>
+
+    {% if pesanan %}
+        <h2>Pesanan Anda:</h2>
+        <ul>
+            {% for item in pesanan %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
+        <h3>Total Pembayaran: Rp {{ total }}</h3>
+    {% endif %}
+</body>
+</html>
