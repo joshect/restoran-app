@@ -353,11 +353,12 @@ if app_mode == "Pelanggan (Order)":
                 if st.form_submit_button("🚀 Kirim Pesanan Sekarang"):
                     try:
                         p = st.session_state.cust_info
-                        
+
                         # 1. Query Insert ke Database
                         query_insert = """
-                            INSERT INTO orders (meja, total_harga, status, status_bayar, nama_pelanggan, telp, tipe_pesanan, waktu) 
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                       
+                            INSERT INTO orders (meja, total_harga, status, status_bayar, nama_pelanggan, telp, tipe_pesanan, waktu, items) 
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """
                         
                         run_commit(query_insert, (
@@ -369,6 +370,7 @@ if app_mode == "Pelanggan (Order)":
                             p['telp'], 
                             p['tipe'], 
                             datetime.now()
+                            items_str
                         ))
                         
                         # 2. Ambil ID Order Terakhir (Penting untuk Detail Pesanan)
