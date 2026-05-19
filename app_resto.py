@@ -180,11 +180,20 @@ def generate_struk(order_data, items):
 # --- 1. KONEKSI DATABASE ---
 def get_connection():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="",
-        database="viinmakan"
+        host=st.secrets["DB_HOST"],
+        port=st.secrets["DB_PORT"],
+        user=st.secrets["DB_USER"],
+        password=st.secrets["DB_PASSWORD"],
+        database=st.secrets["DB_NAME"],
+        ssl_disabled=False
     )
+#def get_connection():
+  #  return mysql.connector.connect(
+   #     host="localhost",
+   #     user="root",
+   #     password="",
+   #     database="viinmakan"
+ #   )
 
 def run_query(query, params=None):
     conn = get_connection()
