@@ -21,7 +21,7 @@ def apply_custom_gui():
         [data-testid="stVerticalBlock"] > div:has(div.stContainer) {
             background-color: white;
             border-radius: 15px;
-            padding: 20px; /* Sedikit lebih lega */
+            padding: 20px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             transition: transform 0.3s ease;
             border: 1px solid #f1f3f5;
@@ -32,8 +32,7 @@ def apply_custom_gui():
             box-shadow: 0 12px 20px rgba(0,0,0,0.1);
         }
 
-        /* Styling Metrik Laporan (Khusus halaman Owner) */
-        /* Membungkus Grafik agar terlihat seperti kartu */
+        /* Styling Metrik Laporan */
         [data-testid="stChart"] {
             background-color: white;
             border-radius: 15px;
@@ -96,8 +95,8 @@ def render_professional_menu(kategori, menus):
         st.info(f"Belum ada menu di kategori {kategori}")
         return
 
-    # Membuat grid
-    cols = st.columns(4) # 4 kolom agar gambar lebih besar dan jelas
+    # Membuat grid 4 kolom
+    cols = st.columns(4) 
     for idx, m in enumerate(items):
         with cols[idx % 4]:
             with st.container():
@@ -177,6 +176,7 @@ def generate_struk(order_data, items):
     </div>
     """
     return struk_html
+
 # --- 1. KONEKSI DATABASE ---
 def get_connection():
     return mysql.connector.connect(
@@ -187,13 +187,6 @@ def get_connection():
         database=st.secrets["DB_NAME"],
         ssl_disabled=False
     )
-#def get_connection():
-  #  return mysql.connector.connect(
-   #     host="localhost",
-   #     user="root",
-   #     password="",
-   #     database="viinmakan"
- #   )
 
 def run_query(query, params=None):
     conn = get_connection()
@@ -264,31 +257,25 @@ if app_mode == "Admin (Manajemen Menu)":
                     st.rerun()
 
 # --- HALAMAN PELANGGAN (ORDER) ---  
-if app_mode == "Pelanggan (Order)":
-    apply_custom_gui() # Panggil CSS hanya sekali di sini
+elif app_mode == "Pelanggan (Order)":
+    apply_custom_gui()
     
-    # === TAMBAHKAN LOGO DI ATAS SINI ===
-    path_logo = "VIIN MAKAN Logo-1.png" # Ganti dengan nama file logo Anda
+    path_logo = "VIIN MAKAN Logo-1.png"
 
     # Menampilkan logo di tengah
-    col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1]) # Gunakan kolom untuk tengahkan logo
-    with col_logo2: # Letakkan di kolom tengah
+    col_logo1, col_logo2, col_logo3 = st.columns([1, 2, 1])
+    with col_logo2:
         try:
-            # use_container_width=True agar logo responsif terhadap lebar kolom
             st.image(path_logo, use_container_width=True) 
         except FileNotFoundError:
-            # Jika file tidak ditemukan, tampilkan teks placeholder atau biarkan kosong
             st.error(f"Logo '{path_logo}' tidak ditemukan. Pastikan file ada di folder yang sama.")
     
-    # 1. Header Tunggal (Sekarang di bawah logo)
     st.markdown("<h1 class='main-header'>🥢 VIINMAKAN VIETNAMESE RESTO</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; margin-top:-20px;'>Autentik, Segar, dan Menyehatkan</p>", unsafe_allow_html=True)
     
-    # Ambil Parameter Meja dari URL Otomatis (Scan QR)
     query_params = st.query_params
     meja_otomatis = query_params.get("meja", "0")
     
-    # 2. Logika Registrasi / Masuk Meja
     if 'cust_info' not in st.session_state:
         st.session_state.cust_info = None
 
@@ -312,9 +299,7 @@ if app_mode == "Pelanggan (Order)":
                 else:
                     st.warning("Mohon isi nama dan nomor meja untuk melanjutkan.")
     
-    # 3. Tampilan Menu (Hanya muncul jika meja sudah terkunci)
     else:
-        # Info Pelanggan di Atas Menu
         p = st.session_state.cust_info
         st.success(f"📍 Meja {st.session_state.no_meja} | 👤 {p['nama']} | 🥡 {p['tipe']}")
         
@@ -322,7 +307,6 @@ if app_mode == "Pelanggan (Order)":
             st.session_state.meja_locked = False
             st.rerun()
 
-        # Ambil Data Menu dari DB
         menus = run_query("SELECT * FROM menu")
         tab1, tab2 = st.tabs(["🍛 Makanan", "🥤 Minuman"])
         
@@ -331,7 +315,7 @@ if app_mode == "Pelanggan (Order)":
         with tab2:
             render_professional_menu("Minuman", menus)
 
-        # 4. Keranjang & Checkout
+        # 4. Keranjang & Checkout (Sudah Diperbaiki & Masuk ke dalam Form)
         if st.session_state.cart:
             st.divider()
             with st.form("form_checkout"):
@@ -353,14 +337,13 @@ if app_mode == "Pelanggan (Order)":
                 if st.form_submit_button("🚀 Kirim Pesanan Sekarang"):
                     try:
                         p = st.session_state.cust_info
-
-                        # 1. Query Insert ke Database
+                        items_str = ", ".join([f"{nama} x{detail['qty']}" for nama, detail in st.session_state.cart.items()])
+                
                         query_insert = """
-                       
                             INSERT INTO orders (meja, total_harga, status, status_bayar, nama_pelanggan, telp, tipe_pesanan, waktu, items) 
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """
-                        
+                
                         run_commit(query_insert, (
                             st.session_state.no_meja, 
                             total_akhir, 
@@ -369,32 +352,29 @@ if app_mode == "Pelanggan (Order)":
                             p['nama'], 
                             p['telp'], 
                             p['tipe'], 
-                            datetime.now()
+                            datetime.now(),
                             items_str
                         ))
-                        
-                        # 2. Ambil ID Order Terakhir (Penting untuk Detail Pesanan)
+                
                         res = run_query("SELECT id FROM orders ORDER BY id DESC LIMIT 1")
                         order_id = res[0]['id']
-                        
-                        # 3. Simpan Detail Item (Jika Anda punya loop order_details)
+                
                         for nama_item, detail in st.session_state.cart.items():
-                             run_commit("""INSERT INTO order_details (order_id, nama_item, harga_satuan, qty, catatan) 
-                                         VALUES (%s, %s, %s, %s, %s)""",
-                                       (order_id, nama_item, detail['harga'], detail['qty'], catatan_all[nama_item]))
+                            run_commit("""
+                                INSERT INTO order_details (order_id, nama_item, harga_satuan, qty, catatan) 
+                                VALUES (%s, %s, %s, %s, %s)
+                            """, (order_id, nama_item, detail['harga'], detail['qty'], catatan_all[nama_item]))
 
-                        # 4. Feedback & Reset (Harus di dalam blok try)
                         st.balloons()
                         st.success("✅ Pesanan terkirim! Silakan menuju kasir untuk verifikasi.")
-                        
-                        # Hapus data keranjang & kunci meja
+                
                         st.session_state.cart = {}
                         st.session_state.meja_locked = False
-                        st.session_state.cust_info = None # Hapus info pelanggan lama
-                        
+                        st.session_state.cust_info = None
+                
                         time.sleep(2)
                         st.rerun()
-                        
+                
                     except Exception as e:
                         st.error(f"Gagal memproses pesanan: {e}")
 
@@ -403,7 +383,6 @@ elif app_mode == "Dapur (Kitchen)":
     st.header("👨‍🍳 Antrian Dapur")
     st_autorefresh(interval=10000, key="f5_dapur")
     
-    # Filter: Hanya pesanan yang SUDAH BAYAR tapi BELUM SELESAI dimasak
     orders = run_query("""
         SELECT * FROM orders 
         WHERE status_bayar = 'Sudah Bayar' AND status != 'Selesai' 
@@ -432,7 +411,7 @@ elif app_mode == "Dapur (Kitchen)":
                 new_stat = st.selectbox("Ubah Status", ["Menunggu", "Dimasak", "Selesai"])
             with col_btn:
                 st.write("###")
-                if st.button("💾 Update", width='stretch'):
+                if st.button("💾 Update"):
                     run_commit("UPDATE orders SET status = %s WHERE id = %s", (new_stat, selected_id))
                     st.rerun()
 
@@ -440,12 +419,9 @@ elif app_mode == "Dapur (Kitchen)":
 elif app_mode == "Kasir (Payment)":
     st.header("💰 Panel Pembayaran Kasir")
     
-    # 1. BUAT TAB DI ATAS (Bukan di dalam loop/button)
     tab_bayar, tab_riwayat = st.tabs(["💳 Menunggu Pembayaran", "📜 Cetak Struk (Riwayat)"])
 
-    # --- TAB 1: PROSES PEMBAYARAN ---
     with tab_bayar:
-        # Perhatikan: Query harus diapit tanda kutip agar terbaca sebagai string
         query_kasir = """
             SELECT id, meja, total_harga, status, status_bayar, nama_pelanggan, telp, tipe_pesanan, waktu 
             FROM orders 
@@ -470,7 +446,6 @@ elif app_mode == "Kasir (Payment)":
                         st.subheader(f"Rp{ro['total_harga']:,}")
                         
                         if ro['telp']:
-                            # Bersihkan nomor telp untuk WhatsApp
                             no_wa = ro['telp']
                             if no_wa.startswith('0'): no_wa = '62' + no_wa[1:]
                             pesan = f"Halo {ro['nama_pelanggan']}, tagihan Meja {ro['meja']} sebesar Rp{ro['total_harga']:,}."
@@ -479,10 +454,8 @@ elif app_mode == "Kasir (Payment)":
                     with c3:
                         st.write("###")
                         if st.button("✅ Konfirmasi Lunas", key=f"pay_{ro['id']}", use_container_width=True):
-                            # Simpan history
                             run_commit("INSERT INTO history_sales (waktu, total, meja) VALUES (%s, %s, %s)", 
                                        (datetime.now(), ro['total_harga'], ro['meja']))
-                            # Update status
                             run_commit("UPDATE orders SET status_bayar = 'Sudah Bayar' WHERE id = %s", (ro['id'],))
                             st.success("Lunas!")
                             time.sleep(1)
@@ -493,7 +466,6 @@ elif app_mode == "Kasir (Payment)":
                         for d in details:
                             st.write(f"- {d['nama_item']} ({d['qty']}x)")
 
-    # --- TAB 2: RIWAYAT & CETAK STRUK ---
     with tab_riwayat:
         st.subheader("Cetak Struk Terakhir")
         riwayat = run_query("SELECT * FROM orders WHERE status_bayar = 'Sudah Bayar' ORDER BY waktu DESC LIMIT 10")
@@ -505,7 +477,6 @@ elif app_mode == "Kasir (Payment)":
                 with st.expander(f"Struk Meja {r['meja']} - Rp{r['total_harga']:,} (ID: {r['id']})"):
                     details_r = run_query("SELECT * FROM order_details WHERE order_id = %s", (r['id'],))
                     
-                    # Generate & Tampilkan Preview Struk
                     html_struk = generate_struk(r, details_r)
                     st.markdown(html_struk, unsafe_allow_html=True)
                     
@@ -520,28 +491,26 @@ elif app_mode == "Kasir (Payment)":
                             setTimeout(function(){{ win.print(); }}, 500);
                             </script>
                         """, height=0)
+
 # --- HALAMAN OWNER ---
 elif app_mode == "Owner (Laporan)":
     st.header("📊 Laporan Penjualan Strategis")
     
-    # --- 1. FILTER SIDEBAR UNTUK PERIODE ---
     st.sidebar.subheader("📅 Pengaturan Laporan")
     opsi_periode = st.sidebar.selectbox(
         "Grup Berdasarkan:", 
         ["Jam", "Hari", "Minggu", "Bulan", "Tahun"]
     )
     
-    # Map periode ke format MySQL
     map_sql = {
         "Jam": "%Y-%m-%d %H:00",
         "Hari": "%Y-%m-%d",
-        "Minggu": "%x-%v", # Format Tahun-Minggu ke-
+        "Minggu": "%x-%v", 
         "Bulan": "%Y-%m",
         "Tahun": "%Y"
     }
     format_tgl = map_sql[opsi_periode]
 
-    # --- 2. TABS LAPORAN ---
     tab_keuangan, tab_produk = st.tabs(["💰 Laporan Keuangan", "🍱 Analisis Produk"])
 
     with tab_keuangan:
@@ -550,53 +519,28 @@ elif app_mode == "Owner (Laporan)":
         
         if data_finance:
             df_fin = pd.DataFrame(data_finance)
-            
-            # PAKSA KONVERSI KE FLOAT SEBELUM GRAFIK
             df_fin['pendapatan_periode'] = pd.to_numeric(df_fin['pendapatan_periode'], errors='coerce').astype(float)
-            st.bar_chart(df_fin.set_index('periode')['pendapatan_periode'])
-        
-            # --- BAGIAN PERBAIKAN METRIK ---
+            
             pendapatan_terakhir = df_fin['pendapatan_periode'].iloc[-1]
             label_periode = df_fin['periode'].iloc[-1]
-            
-            # Menghitung Total Akumulasi (untuk perbandingan jika perlu)
             total_akumulasi = df_fin['pendapatan_periode'].sum()
 
-            # Menampilkan Metrik yang Sesuai Pilihan Filter
             col_m1, col_m2 = st.columns(2)
             with col_m1:
-                st.metric(
-                    label=f"💰 Pendapatan {opsi_periode} Ini ({label_periode})", 
-                    value=f"Rp{pendapatan_terakhir:,}"
-                )
+                st.metric(label=f"💰 Pendapatan {opsi_periode} Ini ({label_periode})", value=f"Rp{pendapatan_terakhir:,}")
             with col_m2:
-                st.metric(
-                    label="📊 Total Akumulasi (All Time)", 
-                    value=f"Rp{total_akumulasi:,}"
-                )
+                st.metric(label="📊 Total Akumulasi (All Time)", value=f"Rp{total_akumulasi:,}")
             
             st.divider()
-        
-            # Menggunakan kolom agar grafik tidak terlalu 'gepeng' di layar lebar
-            c_left, c_chart, c_right = st.columns([0.1, 8, 0.1])
-            with c_chart:
-                st.markdown("### 📈 Tren Pendapatan")
-            # Grafik otomatis akan terbungkus kotak putih berkat CSS di atas
-            st.bar_chart(df_fin.set_index('periode')['pendapatan_periode'])
-            
-            # --- BAGIAN GRAFIK ---
             st.subheader(f"📈 Tren Pendapatan per {opsi_periode}")
-            # Menggunakan bar_chart agar lebih mudah dibaca untuk per jam/hari
             st.bar_chart(df_fin.set_index('periode')['pendapatan_periode'])
             
-            # Tabel Detail
             with st.expander("📝 Lihat Tabel Detail"):
                 st.dataframe(df_fin, use_container_width=True)
         else:
             st.info(f"Belum ada data penjualan untuk laporan per {opsi_periode}.")
         
     with tab_produk:
-        # Query Produk Terlaris - Perbaikan pada bagian WHERE
         query_item_trend = f"""
             SELECT 
                 od.nama_item, 
@@ -604,18 +548,14 @@ elif app_mode == "Owner (Laporan)":
                 DATE_FORMAT(o.waktu, '{format_tgl}') as periode
             FROM order_details od
             JOIN orders o ON od.order_id = o.id
-            WHERE o.status_bayar = 'Sudah Bayar'  -- Perubahan di sini
+            WHERE o.status_bayar = 'Sudah Bayar'  
             GROUP BY periode, od.nama_item
             ORDER BY periode DESC, total_qty DESC
         """
         data_items = run_query(query_item_trend)
-        # ... (sisa kode laporan produk Anda) ...
-        data_items = run_query(query_item_trend)
         
         if data_items:
             df_items = pd.DataFrame(data_items)
-            
-            # Filter Produk (Multiselect)
             list_produk = df_items['nama_item'].unique()
             produk_pilihan = st.multiselect(
                 "Filter Produk Terlaris:", 
@@ -626,12 +566,9 @@ elif app_mode == "Owner (Laporan)":
             df_filtered = df_items[df_items['nama_item'].isin(produk_pilihan)]
             
             if not df_filtered.empty:
-                # Chart Batang Perbandingan
                 st.subheader(f"📊 Analisis Kuantitas Produk per {opsi_periode}")
-                # Pivot untuk chart agar sumbu X adalah periode dan warna adalah nama produk
                 df_pivot = df_filtered.pivot(index='periode', columns='nama_item', values='total_qty').fillna(0)
                 st.bar_chart(df_pivot)
-                
-                st.dataframe(df_filtered, width='stretch')
+                st.dataframe(df_filtered, use_container_width=True)
         else:
             st.info("Data produk belum tersedia.")
